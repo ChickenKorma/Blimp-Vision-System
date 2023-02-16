@@ -17,15 +17,16 @@ import csv
 
 # ------------------------------------------ VARIABLES ------------------------------------------
 
-# Images
-total_images = 5
-
-image_path_prefix = "D:/Uni Stuff/IP/Data/Images/sphere_cube_"
 
 # Data
-csv_path_prefix = "D:/Uni Stuff/IP/Data/CSVs/"
-csv_pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
-csv_bbox_header = ["min_x", "min_y", "max_x", "max_y"]
+data_path_prefix = "D:/Uni Stuff/IP/Data/"
+image_path_prefix = data_path_prefix + "Images/image_"
+bbox_path_prefix = data_path_prefix + "Bounding Boxes/bbox_"
+
+pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
+
+# Images
+total_images = 5
 
 # Blimp
 min_distance = 5
@@ -41,8 +42,14 @@ angle_of_view = 71.5
 blimp_object = bpy.data.objects["Blimp"]
 camera_object = bpy.data.objects["Camera"]
 
-# Camera
-aspect_ratio = bpy.context.scene.render.resolution_x / bpy.context.scene.render.resolution_y
+# Blimp Data
+blimp_vertices = blimp_object.data.vertices
+
+# Camera Settings
+res_width = bpy.context.scene.render.resolution_x
+res_height = bpy.context.scene.render.resolution_y
+
+aspect_ratio = res_width / res_height
 
 
 # ------------------------------------------ FUNCTIONS ------------------------------------------
@@ -62,13 +69,13 @@ def new_blimp_position():
 
 # Generates and returns a new random euler rotation
 def new_blimp_rotation():
-    roll = (random.random() - 0.5) * 2 * math.pi
+    roll = (random.random() - 0.5) * 2 * math.radians(10)
 
-    pitch = (random.random() - 0.5) * 2 * math.pi
+    pitch = (random.random() - 0.5) * 2 * math.radians(20)
 
     yaw = (random.random() - 0.5) * 2 * math.pi
     
-    return mathutils.Euler((roll, pitch, yaw))
+    return mathutils.Euler((roll, pitch, yaw))   
 
 # Finds and returns the position and rotation of 'object' as a list of strings of each axis
 def get_blimp_pose():
@@ -85,17 +92,13 @@ def get_blimp_pose():
 # Finds and returns the screen-space coordinates of the 2D bounding box of 'object'
 def get_blimp_bounding_box():
     blimp_matrix = blimp_object.matrix_world
-    vertices = blimp_object.data.vertices
     
-    res_width = bpy.context.scene.render.resolution_x
-    res_height = bpy.context.scene.render.resolution_y
-    
-    vertex_screen_positions = np.empty([len(vertices), 2])
+    vertex_screen_positions = np.empty([len(blimp_vertices), 2])
     
     i = 0
     
-    while i < len(vertices):
-        vertex_world_pos = blimp_matrix @ vertices[i].co
+    while i < len(blimp_vertices):
+        vertex_world_pos = blimp_matrix @ blimp_vertices[i].co
         
         vertex_relative_screen_pos = bpy_extras.object_utils.world_to_camera_view(bpy.context.scene, camera_object, vertex_world_pos)
         
@@ -105,19 +108,23 @@ def get_blimp_bounding_box():
         
     min = vertex_screen_positions.min(axis=0)
     max = vertex_screen_positions.max(axis=0)
+
+    # YOLO bounding box format
+    bbox_width = max[0] - min[0]
+    bbox_height = max[1] - min[1]
+
+    bbox_center_x = min[0] + (0.5 * bbox_width)
+    bbox_center_y = min[1] + (0.5 * bbox_height)
     
-    return [math.floor(min[0]), math.floor(min[1]), math.ceil(max[0]), math.ceil(max[1])]    
+    return [bbox_center_x / res_width, bbox_center_y / res_height, bbox_width / res_width, bbox_height / res_height]    
 
 
 # ------------------------------------------ MAIN ------------------------------------------
 
 
-with open(csv_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline='') as blimp_csv, open(csv_path_prefix + "boundary boxes.csv", 'w', encoding='UTF8', newline='') as bbox_csv:
+with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline='') as blimp_csv:
     blimp_writer = csv.writer(blimp_csv)
-    blimp_writer.writerow(csv_pose_header)
-    
-    bbox_writer = csv.writer(bbox_csv)
-    bbox_writer.writerow(csv_bbox_header)
+    blimp_writer.writerow(pose_header)
 
     image_no = 0
 
@@ -131,8 +138,12 @@ with open(csv_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline='')
         bpy.context.scene.render.filepath = image_path_prefix + str(image_no) + ".png"
         bpy.ops.render.render(write_still = 1)
 
-        #blimp_writer.writerow(get_blimp_pose())
+        blimp_writer.writerow(get_blimp_pose())
         
-        #bbox_writer.writerow(get_blimp_bounding_box())
+        bbox_data = get_blimp_bounding_box()
+        bbox_str = "0 " + str(bbox_data[0]) + " " + str(bbox_data[1]) + " " + str(bbox_data[2]) + " " + str(bbox_data[3])
+
+        with open(bbox_path_prefix + str(image_no) + ".txt", 'w', encoding='UTF8') as bbox_txt:
+            bbox_txt.write(bbox_str)
         
         image_no += 1   
