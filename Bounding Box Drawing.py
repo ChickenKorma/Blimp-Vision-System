@@ -1,15 +1,14 @@
 import cv2 as cv
-import csv
 
 bbox_path_prefix = "D:/Uni Stuff/IP/Data/Bounding Boxes/bbox_"
 img_path_prefix = "D:/Uni Stuff/IP/Data/Images/image_"
 
-no_images = 5
+total_images = 5
 
 res_width = 1920
 res_height = 1080
 
-for image_no in range(no_images):
+for image_no in range(total_images):
     with open(bbox_path_prefix + str(image_no) + ".txt", 'r', encoding='UTF8') as bbox_txt:
         bbox_data = bbox_txt.read().split()
         

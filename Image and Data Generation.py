@@ -20,7 +20,7 @@ import csv
 
 # Data
 data_path_prefix = "D:/Uni Stuff/IP/Data/"
-image_path_prefix = data_path_prefix + "Images/image_"
+image_path_prefix = data_path_prefix + "Blimp Images/image_"
 bbox_path_prefix = data_path_prefix + "Bounding Boxes/bbox_"
 
 pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
@@ -31,6 +31,9 @@ total_images = 5
 # Blimp
 min_distance = 5
 max_distance = 75
+
+max_pitch_angle = 20
+max_roll_angle = 10
 
 # Camera
 angle_of_view = 71.5
@@ -69,9 +72,9 @@ def new_blimp_position():
 
 # Generates and returns a new random euler rotation
 def new_blimp_rotation():
-    roll = (random.random() - 0.5) * 2 * math.radians(10)
+    roll = (random.random() - 0.5) * 2 * math.radians(max_roll_angle)
 
-    pitch = (random.random() - 0.5) * 2 * math.radians(20)
+    pitch = (random.random() - 0.5) * 2 * math.radians(max_pitch_angle)
 
     yaw = (random.random() - 0.5) * 2 * math.pi
     
@@ -126,9 +129,7 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
     blimp_writer = csv.writer(blimp_csv)
     blimp_writer.writerow(pose_header)
 
-    image_no = 0
-
-    while image_no < total_images: 
+    for image_no in range(total_images): 
         blimp_object.location = new_blimp_position()
         blimp_object.rotation_euler = new_blimp_rotation()
         
@@ -144,6 +145,4 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
         bbox_str = "0 " + str(bbox_data[0]) + " " + str(bbox_data[1]) + " " + str(bbox_data[2]) + " " + str(bbox_data[3])
 
         with open(bbox_path_prefix + str(image_no) + ".txt", 'w', encoding='UTF8') as bbox_txt:
-            bbox_txt.write(bbox_str)
-        
-        image_no += 1   
+            bbox_txt.write(bbox_str)  
