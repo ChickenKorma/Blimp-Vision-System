@@ -1,9 +1,10 @@
 import cv2 as cv
 
 bbox_path_prefix = "D:/Uni Stuff/IP/Data/Bounding Boxes/bbox_"
-img_path_prefix = "D:/Uni Stuff/IP/Data/Images/image_"
+img_path_prefix = "D:/Uni Stuff/IP/Data/Blimp Images/Corrected/image_"
+test = "D:/Uni Stuff/IP/Data/Blimp Images/Raw/image_"
 
-total_images = 5
+total_images = 2
 
 res_width = 1920
 res_height = 1080
@@ -24,8 +25,12 @@ for image_no in range(total_images):
         max_y = int(bbox_center_y + (0.5 * bbox_height))
 
         img = cv.imread(img_path_prefix + str(image_no) + ".png")
+        raw_img = cv.imread(test + str(image_no) + ".png")
 
         cv.rectangle(img, (min_x, min_y), (max_x, max_y), (0, 255, 0), 1)
-        cv.imshow("Bounding box of image " + str(image_no), img)
+        cv.rectangle(raw_img, (min_x, min_y), (max_x, max_y), (0, 255, 0), 1)
+
+        cv.imshow("Corrected Image " + str(image_no), img)
+        cv.imshow("Raw Image " + str(image_no), raw_img)
 
 cv.waitKey(0)

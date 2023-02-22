@@ -7,6 +7,7 @@ import bpy_extras.object_utils
 
 # Extra modules
 import numpy as np
+import cv2 as cv
 
 # Python modules
 import math
@@ -20,7 +21,7 @@ import csv
 
 # Data
 data_path_prefix = "D:/Uni Stuff/IP/Data/"
-image_path_prefix = data_path_prefix + "Blimp Images/image_"
+image_path_prefix = data_path_prefix + "Blimp Images/Raw/image_"
 bbox_path_prefix = data_path_prefix + "Bounding Boxes/bbox_"
 
 pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
@@ -53,6 +54,11 @@ res_width = bpy.context.scene.render.resolution_x
 res_height = bpy.context.scene.render.resolution_y
 
 aspect_ratio = res_width / res_height
+
+loaded_arrays = np.load(data_path_prefix + "Camera Properties.npz", allow_pickle=True)
+camera_matrix = loaded_arrays['camera_matrix']
+distortion_coeffs = loaded_arrays['distortion_coeffs']
+new_camera_matrix = loaded_arrays['new_camera_matrix']
 
 
 # ------------------------------------------ FUNCTIONS ------------------------------------------
@@ -112,12 +118,35 @@ def get_blimp_bounding_box():
     min = vertex_screen_positions.min(axis=0)
     max = vertex_screen_positions.max(axis=0)
 
-    # YOLO bounding box format
-    bbox_width = max[0] - min[0]
-    bbox_height = max[1] - min[1]
+    # Undistort coordinates
+    bbox_points = np.array([[min], [max]], np.float32)
 
-    bbox_center_x = min[0] + (0.5 * bbox_width)
-    bbox_center_y = min[1] + (0.5 * bbox_height)
+    corrected_bbox_points = cv.undistortPoints(bbox_points, camera_matrix, distortion_coeffs, P=camera_matrix) 
+    #print(corrected_bbox_points) 
+
+    min_x = np.clip(corrected_bbox_points[0][0][0], 0, res_width)
+    min_y = np.clip(corrected_bbox_points[0][0][1], 0, res_height)
+    max_x = np.clip(corrected_bbox_points[1][0][0], 0, res_width)
+    max_y = np.clip(corrected_bbox_points[1][0][1], 0, res_height)
+
+    print((np.abs(min[0] - min_x) + np.abs(min[1] - min_y) + np.abs(max[0] - max_x) + np.abs(max[1] - max_y)) / 4)
+
+    #min_x = corrected_bbox_points[0][0][0] * 25
+    #min_y = corrected_bbox_points[0][0][1] * 25
+    #max_x = corrected_bbox_points[1][0][0] * 25
+    #max_y = corrected_bbox_points[1][0][1] * 25
+
+    #min_x = map_x.at<float>(min[0], min[1])
+    #min_y = map_y.at<float>(min[0], min[1])
+    #max_x = map_x.at<float>(max[0], max[1])
+    #max_y = map_y.at<float>(max[0], max[1])
+
+    # YOLO bounding box format
+    bbox_width = max_x - min_x
+    bbox_height = max_y - min_y
+
+    bbox_center_x = min_x + (0.5 * bbox_width)
+    bbox_center_y = min_y + (0.5 * bbox_height)
     
     return [bbox_center_x / res_width, bbox_center_y / res_height, bbox_width / res_width, bbox_height / res_height]    
 
