@@ -22,12 +22,13 @@ import csv
 # Data
 data_path_prefix = "D:/Uni Stuff/IP/Data/"
 image_path_prefix = data_path_prefix + "Blimp Images/Raw/image_"
-bbox_path_prefix = data_path_prefix + "Bounding Boxes/bbox_"
+bbox_path_prefix = data_path_prefix + "Bounding Boxes/image_"
 
 pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
+bbox_header = ["cent_x", "cent_y", "width", "height"]
 
 # Images
-total_images = 5
+total_images = 300
 
 # Blimp
 min_distance = 5
@@ -37,7 +38,7 @@ max_pitch_angle = 20
 max_roll_angle = 10
 
 # Camera
-angle_of_view = 71.5
+angle_of_view = 68
 
 
 # ------------------------------------------ FIXED ------------------------------------------
@@ -55,10 +56,10 @@ res_height = bpy.context.scene.render.resolution_y
 
 aspect_ratio = res_width / res_height
 
-loaded_arrays = np.load(data_path_prefix + "Camera Properties.npz", allow_pickle=True)
-camera_matrix = loaded_arrays['camera_matrix']
-distortion_coeffs = loaded_arrays['distortion_coeffs']
-new_camera_matrix = loaded_arrays['new_camera_matrix']
+#loaded_arrays = np.load(data_path_prefix + "Camera Properties.npz", allow_pickle=True)
+#camera_matrix = loaded_arrays['camera_matrix']
+#distortion_coeffs = loaded_arrays['distortion_coeffs']
+#new_camera_matrix = loaded_arrays['new_camera_matrix']
 
 
 # ------------------------------------------ FUNCTIONS ------------------------------------------
@@ -119,27 +120,22 @@ def get_blimp_bounding_box():
     max = vertex_screen_positions.max(axis=0)
 
     # Undistort coordinates
-    bbox_points = np.array([[min], [max]], np.float32)
+    #bbox_points = np.array([[min], [max]], np.float32)
 
-    corrected_bbox_points = cv.undistortPoints(bbox_points, camera_matrix, distortion_coeffs, P=camera_matrix) 
+    #corrected_bbox_points = cv.undistortPoints(bbox_points, camera_matrix, distortion_coeffs, P=camera_matrix) 
     #print(corrected_bbox_points) 
 
-    min_x = np.clip(corrected_bbox_points[0][0][0], 0, res_width)
-    min_y = np.clip(corrected_bbox_points[0][0][1], 0, res_height)
-    max_x = np.clip(corrected_bbox_points[1][0][0], 0, res_width)
-    max_y = np.clip(corrected_bbox_points[1][0][1], 0, res_height)
+    #min_x = np.clip(corrected_bbox_points[0][0][0], 0, res_width)
+    #min_y = np.clip(corrected_bbox_points[0][0][1], 0, res_height)
+    #max_x = np.clip(corrected_bbox_points[1][0][0], 0, res_width)
+    #max_y = np.clip(corrected_bbox_points[1][0][1], 0, res_height)
 
-    print((np.abs(min[0] - min_x) + np.abs(min[1] - min_y) + np.abs(max[0] - max_x) + np.abs(max[1] - max_y)) / 4)
+    #print((np.abs(min[0] - min_x) + np.abs(min[1] - min_y) + np.abs(max[0] - max_x) + np.abs(max[1] - max_y)) / 4)
 
-    #min_x = corrected_bbox_points[0][0][0] * 25
-    #min_y = corrected_bbox_points[0][0][1] * 25
-    #max_x = corrected_bbox_points[1][0][0] * 25
-    #max_y = corrected_bbox_points[1][0][1] * 25
-
-    #min_x = map_x.at<float>(min[0], min[1])
-    #min_y = map_y.at<float>(min[0], min[1])
-    #max_x = map_x.at<float>(max[0], max[1])
-    #max_y = map_y.at<float>(max[0], max[1])
+    min_x = min[0]
+    max_x = max[0]
+    min_y = min[1]
+    max_y = max[1]
 
     # YOLO bounding box format
     bbox_width = max_x - min_x
@@ -154,9 +150,12 @@ def get_blimp_bounding_box():
 # ------------------------------------------ MAIN ------------------------------------------
 
 
-with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline='') as blimp_csv:
+with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline='') as blimp_csv, open(data_path_prefix + "bbox data.csv", 'w', encoding='UTF8', newline='') as bbox_csv:
     blimp_writer = csv.writer(blimp_csv)
     blimp_writer.writerow(pose_header)
+
+    bbox_writer = csv.writer(bbox_csv)
+    bbox_writer.writerow(bbox_header)
 
     for image_no in range(total_images): 
         blimp_object.location = new_blimp_position()
@@ -171,6 +170,9 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
         blimp_writer.writerow(get_blimp_pose())
         
         bbox_data = get_blimp_bounding_box()
+
+        bbox_writer.writerow(bbox_data)
+
         bbox_str = "0 " + str(bbox_data[0]) + " " + str(bbox_data[1]) + " " + str(bbox_data[2]) + " " + str(bbox_data[3])
 
         with open(bbox_path_prefix + str(image_no) + ".txt", 'w', encoding='UTF8') as bbox_txt:
