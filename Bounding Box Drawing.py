@@ -3,7 +3,9 @@ import cv2 as cv
 bbox_path_prefix = "D:/Uni Stuff/IP/Data/Bounding Boxes/image_"
 img_path_prefix = "D:/Uni Stuff/IP/Data/Blimp Images/Raw/image_"
 
-total_images = 2
+save_path_prefix = "D:/Uni Stuff/IP/image_"
+
+total_images = 10
 
 res_width = 1920
 res_height = 1080
@@ -25,8 +27,10 @@ for image_no in range(total_images):
 
         img = cv.imread(img_path_prefix + str(image_no) + ".png")
 
-        cv.rectangle(img, (min_x, min_y), (max_x, max_y), (0, 255, 0), 1)
+        cv.rectangle(img, (min_x, min_y), (max_x, max_y), (0, 255, 0), 4)
 
-        cv.imshow("Raw Image " + str(image_no), img)
+        cv.imwrite(save_path_prefix + str(image_no) + ".png", img)
 
-cv.waitKey(0)
+        #cv.imshow("Raw Image " + str(image_no), img)
+
+#cv.waitKey(0)

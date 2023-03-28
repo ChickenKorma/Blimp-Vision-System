@@ -28,7 +28,7 @@ pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
 bbox_header = ["cent_x", "cent_y", "width", "height"]
 
 # Images
-total_images = 300
+total_images = 100
 
 # Blimp
 min_distance = 5
