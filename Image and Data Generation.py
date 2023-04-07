@@ -28,13 +28,13 @@ pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
 bbox_header = ["cent_x", "cent_y", "width", "height"]
 
 # Images
-total_images = 100
+total_images = 10000
 
 # Blimp
 min_distance = 5
-max_distance = 75
+max_distance = 76.5
 
-max_pitch_angle = 20
+max_pitch_angle = 45
 max_roll_angle = 10
 
 # Camera
@@ -112,25 +112,12 @@ def get_blimp_bounding_box():
         
         vertex_relative_screen_pos = bpy_extras.object_utils.world_to_camera_view(bpy.context.scene, camera_object, vertex_world_pos)
         
-        vertex_screen_positions[i] = [vertex_relative_screen_pos[0] * res_width, res_height - (vertex_relative_screen_pos[1] * res_height)]
+        vertex_screen_positions[i] = [vertex_relative_screen_pos[0], 1 - vertex_relative_screen_pos[1]]
         
         i += 1
         
     min = vertex_screen_positions.min(axis=0)
     max = vertex_screen_positions.max(axis=0)
-
-    # Undistort coordinates
-    #bbox_points = np.array([[min], [max]], np.float32)
-
-    #corrected_bbox_points = cv.undistortPoints(bbox_points, camera_matrix, distortion_coeffs, P=camera_matrix) 
-    #print(corrected_bbox_points) 
-
-    #min_x = np.clip(corrected_bbox_points[0][0][0], 0, res_width)
-    #min_y = np.clip(corrected_bbox_points[0][0][1], 0, res_height)
-    #max_x = np.clip(corrected_bbox_points[1][0][0], 0, res_width)
-    #max_y = np.clip(corrected_bbox_points[1][0][1], 0, res_height)
-
-    #print((np.abs(min[0] - min_x) + np.abs(min[1] - min_y) + np.abs(max[0] - max_x) + np.abs(max[1] - max_y)) / 4)
 
     min_x = min[0]
     max_x = max[0]
@@ -144,7 +131,7 @@ def get_blimp_bounding_box():
     bbox_center_x = min_x + (0.5 * bbox_width)
     bbox_center_y = min_y + (0.5 * bbox_height)
     
-    return [bbox_center_x / res_width, bbox_center_y / res_height, bbox_width / res_width, bbox_height / res_height]    
+    return [bbox_center_x, bbox_center_y, bbox_width, bbox_height]    
 
 
 # ------------------------------------------ MAIN ------------------------------------------

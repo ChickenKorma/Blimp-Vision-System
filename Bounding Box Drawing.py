@@ -29,8 +29,8 @@ for image_no in range(total_images):
 
         cv.rectangle(img, (min_x, min_y), (max_x, max_y), (0, 255, 0), 4)
 
-        cv.imwrite(save_path_prefix + str(image_no) + ".png", img)
+        #cv.imwrite(save_path_prefix + str(image_no) + ".png", img)
 
-        #cv.imshow("Raw Image " + str(image_no), img)
+        cv.imshow("Raw Image " + str(image_no), img)
 
-#cv.waitKey(0)
+cv.waitKey(0)
