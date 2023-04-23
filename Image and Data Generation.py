@@ -23,12 +23,14 @@ import csv
 data_path_prefix = "D:/Uni Stuff/IP/Data/"
 image_path_prefix = data_path_prefix + "Blimp Images/Raw/image_"
 bbox_path_prefix = data_path_prefix + "Bounding Boxes/image_"
+background_path_prefix = data_path_prefix + "Backgrounds/image_"
 
 pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
 bbox_header = ["cent_x", "cent_y", "width", "height"]
 
 # Images
-total_images = 10000
+total_images = 5
+background_images = 3
 
 # Blimp
 min_distance = 5
@@ -144,9 +146,18 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
     bbox_writer = csv.writer(bbox_csv)
     bbox_writer.writerow(bbox_header)
 
+    background_no = -1
+
     for image_no in range(total_images): 
         blimp_object.location = new_blimp_position()
         blimp_object.rotation_euler = new_blimp_rotation()
+
+        if background_no < background_images - 1:
+            background_no += 1
+        else:
+            background_no = 0
+            
+        #bpy.context.scene.node_tree.nodes[4].image = bpy.data.images.load(background_path_prefix + str(background_no) + ".png")
         
         # Redraw scene, not advised by Blender but is necessary to update objects and camera for the new render
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
