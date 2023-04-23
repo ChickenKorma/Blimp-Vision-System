@@ -14,6 +14,7 @@ import math
 import mathutils
 import random
 import csv
+import time
 
 
 # ------------------------------------------ VARIABLES ------------------------------------------
@@ -30,10 +31,10 @@ bbox_header = ["cent_x", "cent_y", "width", "height"]
 
 # Images
 total_images = 5
-background_images = 3
+background_images = 627
 
 # Blimp
-min_distance = 5
+min_distance = 2.7
 max_distance = 76.5
 
 max_pitch_angle = 45
@@ -57,11 +58,6 @@ res_width = bpy.context.scene.render.resolution_x
 res_height = bpy.context.scene.render.resolution_y
 
 aspect_ratio = res_width / res_height
-
-#loaded_arrays = np.load(data_path_prefix + "Camera Properties.npz", allow_pickle=True)
-#camera_matrix = loaded_arrays['camera_matrix']
-#distortion_coeffs = loaded_arrays['distortion_coeffs']
-#new_camera_matrix = loaded_arrays['new_camera_matrix']
 
 
 # ------------------------------------------ FUNCTIONS ------------------------------------------
@@ -138,6 +134,7 @@ def get_blimp_bounding_box():
 
 # ------------------------------------------ MAIN ------------------------------------------
 
+generation_times = np.array([])
 
 with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline='') as blimp_csv, open(data_path_prefix + "bbox data.csv", 'w', encoding='UTF8', newline='') as bbox_csv:
     blimp_writer = csv.writer(blimp_csv)
@@ -149,6 +146,8 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
     background_no = -1
 
     for image_no in range(total_images): 
+        start_time = time.time()
+
         blimp_object.location = new_blimp_position()
         blimp_object.rotation_euler = new_blimp_rotation()
 
@@ -157,7 +156,7 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
         else:
             background_no = 0
             
-        #bpy.context.scene.node_tree.nodes[4].image = bpy.data.images.load(background_path_prefix + str(background_no) + ".png")
+        bpy.context.scene.node_tree.nodes[4].image = bpy.data.images.load(background_path_prefix + str(background_no) + ".png")
         
         # Redraw scene, not advised by Blender but is necessary to update objects and camera for the new render
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
@@ -175,3 +174,8 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
 
         with open(bbox_path_prefix + str(image_no) + ".txt", 'w', encoding='UTF8') as bbox_txt:
             bbox_txt.write(bbox_str)  
+
+        end_time = time.time()
+        generation_times = np.append(generation_times, [end_time - start_time])
+
+np.savez(data_path_prefix + "Generation Times.npz", generation_times = generation_times)

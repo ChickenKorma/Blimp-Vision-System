@@ -3,6 +3,7 @@
 
 import cv2 as cv
 import numpy as np
+import time
 
 
 # ------------------------------------------ VARIABLES ------------------------------------------
@@ -27,7 +28,11 @@ camera_matrix = loaded_arrays['camera_matrix']
 distortion_coeffs = loaded_arrays['distortion_coeffs']
 new_camera_matrix = loaded_arrays['new_camera_matrix']
 
+correction_times = np.array([])
+
 for image_no in range(total_images):
+    start_time = time.time()
+
     image = cv.imread(raw_image_path_prefix + str(image_no) + ".png")
 
     undistorted_image = cv.undistort(image, camera_matrix, distortion_coeffs, None, new_camera_matrix)
@@ -62,12 +67,8 @@ for image_no in range(total_images):
     max_x = int(max_x)
     max_y = int(max_y)
 
-    #print(points)
-    #print(undistorted_points)
-    print("Min: " + str(min_x) + ", " + str(min_y))
-    print("Max: " + str(max_x) + ", " + str(max_y))
-    print("New Min: " + str(new_min_x) + ", " + str(new_min_y))
-    print("New Max: " + str(new_max_x) + ", " + str(new_max_y))
+    end_time = time.time()
+    correction_times = np.append(correction_times, [end_time - start_time])
 
     #cv.rectangle(image, (min_x, min_y), (max_x, max_y), (0, 255, 0), 1)
     cv.rectangle(undistorted_image, (min_x, min_y), (max_x, max_y), (0, 0, 255), 1)
@@ -77,4 +78,7 @@ for image_no in range(total_images):
 
     #cv.imshow("Raw", image)
     cv.imshow("Corrected", undistorted_image)
-    cv.waitKey(0)
+
+np.savez(data_path_prefix + "Correction Times.npz", correction_times = correction_times)
+
+cv.waitKey(0)

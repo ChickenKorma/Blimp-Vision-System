@@ -12,10 +12,14 @@ import math
 
 image_path_prefix = "D:/Uni Stuff/IP/Data/Chequerboard Images/image_"
 
-total_images = 20
+total_images = 30
 
-nominal_distance = 2.3
-distance_variation = 0.5
+min_distance = 1.8
+max_distance = 3.75
+
+angle_of_view = 40
+
+aspect_ratio = 1920 / 1080
 
 max_off_angle = 35
 
@@ -29,9 +33,13 @@ chequerboard_obj = bpy.data.objects["Chequerboard"]
 
 
 def new_chequerboard_position():
-    x_pos = nominal_distance + ((random.random() - 0.5) * 2 * distance_variation)
-    y_pos = 0
-    z_pos = 0
+    x_pos = min_distance + ((max_distance - min_distance) * random.random())
+
+    max_y = x_pos * math.tan(math.radians(0.5 * angle_of_view))
+    y_pos = (random.random() - 0.5) * 2 * max_y
+
+    max_z = max_y / aspect_ratio
+    z_pos = (random.random() - 0.5) * 2 * max_z
 
     return mathutils.Vector((x_pos, y_pos, z_pos))
 
