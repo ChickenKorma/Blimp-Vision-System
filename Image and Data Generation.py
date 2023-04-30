@@ -30,18 +30,24 @@ pose_header = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z"]
 bbox_header = ["cent_x", "cent_y", "width", "height"]
 
 # Images
-total_images = 5
+total_images = 3000
 background_images = 627
 
 # Blimp
 min_distance = 2.7
 max_distance = 76.5
 
+y_offset = 1.2
+z_offset = 1
+
 max_pitch_angle = 45
 max_roll_angle = 10
 
 # Camera
-angle_of_view = 68
+angle_of_view = 71.5
+
+# Batch rendering
+starting_index = 12000
 
 
 # ------------------------------------------ FIXED ------------------------------------------
@@ -67,11 +73,11 @@ aspect_ratio = res_width / res_height
 def new_blimp_position():  
     x_pos = min_distance + ((max_distance - min_distance) * random.random())
 
-    max_y = x_pos * math.tan(math.radians(0.5 * angle_of_view))
-    y_pos = (random.random() - 0.5) * 2 * max_y
+    max_y = (x_pos * math.tan(math.radians(0.5 * angle_of_view)))
+    y_pos = (random.random() - 0.5) * 2 * (max_y - y_offset)
 
     max_z = max_y / aspect_ratio
-    z_pos = (random.random() - 0.5) * 2 * max_z
+    z_pos = (random.random() - 0.5) * 2 * (max_z - z_offset)
     
     return mathutils.Vector((x_pos, y_pos, z_pos))
 
@@ -134,16 +140,25 @@ def get_blimp_bounding_box():
 
 # ------------------------------------------ MAIN ------------------------------------------
 
-generation_times = np.array([])
+render_times = np.array([])
+pose_times = np.array([])
+bbox_times = np.array([])
 
-with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline='') as blimp_csv, open(data_path_prefix + "bbox data.csv", 'w', encoding='UTF8', newline='') as bbox_csv:
+if starting_index != 0:
+    with np.load(data_path_prefix + "Generation Times.npz", allow_pickle=True) as times:
+        render_times = times["render"]
+        pose_times = times["pose"]
+        bbox_times = times["bbox"]
+
+with open(data_path_prefix + "blimp poses.csv", 'a', encoding='UTF8', newline='') as blimp_csv, open(data_path_prefix + "bbox data.csv", 'a', encoding='UTF8', newline='') as bbox_csv:
     blimp_writer = csv.writer(blimp_csv)
-    blimp_writer.writerow(pose_header)
+    bbox_writer = csv.writer(bbox_csv)  
 
-    bbox_writer = csv.writer(bbox_csv)
-    bbox_writer.writerow(bbox_header)
+    if starting_index == 0:
+        blimp_writer.writerow(pose_header)
+        bbox_writer.writerow(bbox_header)
 
-    background_no = -1
+    background_no = -1 + (starting_index % background_images)
 
     for image_no in range(total_images): 
         start_time = time.time()
@@ -161,10 +176,14 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
         # Redraw scene, not advised by Blender but is necessary to update objects and camera for the new render
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         
-        bpy.context.scene.render.filepath = image_path_prefix + str(image_no) + ".png"
+        bpy.context.scene.render.filepath = image_path_prefix + str(image_no + starting_index) + ".png"
         bpy.ops.render.render(write_still = 1)
 
+        finish_render_time = time.time()
+
         blimp_writer.writerow(get_blimp_pose())
+
+        finish_pose_time = time.time()
         
         bbox_data = get_blimp_bounding_box()
 
@@ -172,10 +191,13 @@ with open(data_path_prefix + "blimp poses.csv", 'w', encoding='UTF8', newline=''
 
         bbox_str = "0 " + str(bbox_data[0]) + " " + str(bbox_data[1]) + " " + str(bbox_data[2]) + " " + str(bbox_data[3])
 
-        with open(bbox_path_prefix + str(image_no) + ".txt", 'w', encoding='UTF8') as bbox_txt:
+        with open(bbox_path_prefix + str(image_no + starting_index) + ".txt", 'w', encoding='UTF8') as bbox_txt:
             bbox_txt.write(bbox_str)  
 
-        end_time = time.time()
-        generation_times = np.append(generation_times, [end_time - start_time])
+        finish_bbox_time = time.time()
 
-np.savez(data_path_prefix + "Generation Times.npz", generation_times = generation_times)
+        render_times = np.append(render_times, [finish_render_time - start_time])
+        pose_times = np.append(pose_times, [finish_pose_time - finish_render_time])
+        bbox_times = np.append(bbox_times, [finish_bbox_time - finish_pose_time])
+
+np.savez(data_path_prefix + "Generation Times.npz", render = render_times, pose = pose_times, bbox = bbox_times)

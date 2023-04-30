@@ -57,4 +57,8 @@ for image_no in range(total_images):
 ret, camera_matrix, distortion_coeffs, rot_vecs, trans_vecs = cv.calibrateCamera(obj_points, image_points, (res_width, res_height), None, None)
 new_camera_matrix, roi = cv.getOptimalNewCameraMatrix(camera_matrix, distortion_coeffs, (res_width, res_height), 1, (res_width, res_height))
 
+print(camera_matrix)
+print(new_camera_matrix)
+print(distortion_coeffs)
+
 np.savez(data_path_prefix + "Camera Properties.npz", camera_matrix=camera_matrix, distortion_coeffs=distortion_coeffs, new_camera_matrix=new_camera_matrix)
