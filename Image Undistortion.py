@@ -10,11 +10,14 @@ import time
 
 
 data_path_prefix = "D:/Uni Stuff/IP/Data/"
+
 raw_image_path_prefix = data_path_prefix + "Blimp Images/Raw/image_"
 corrected_image_path_prefix = data_path_prefix + "Blimp Images/Corrected/image_"
-bbox_path_prefix = data_path_prefix + "Bounding Boxes/image_"
 
-total_images = 5
+raw_bbox_path_prefix = data_path_prefix + "Bounding Boxes/Raw/image_"
+corrected_bbox_path_prefix = data_path_prefix + "Bounding Boxes/Corrected/image_"
+
+total_images = 15000
 
 res_width = 1920
 res_height = 1080
@@ -25,10 +28,11 @@ res_height = 1080
 loaded_arrays = np.load(data_path_prefix + "Camera Properties.npz", allow_pickle=True)
 
 camera_matrix = loaded_arrays['camera_matrix']
-distortion_coeffs = loaded_arrays['distortion_coeffs']
-new_camera_matrix = loaded_arrays['new_camera_matrix']
+distortion_coeffs = loaded_arrays['distortion_coeffs'] 
+new_camera_matrix = loaded_arrays['new_camera_matrix'] 
 
-correction_times = np.array([])
+image_undistortion_times = np.array([])
+bbox_undistortion_times = np.array([])
 
 for image_no in range(total_images):
     start_time = time.time()
@@ -36,8 +40,11 @@ for image_no in range(total_images):
     image = cv.imread(raw_image_path_prefix + str(image_no) + ".png")
 
     undistorted_image = cv.undistort(image, camera_matrix, distortion_coeffs, None, new_camera_matrix)
+    cv.imwrite(corrected_image_path_prefix + str(image_no) + ".png", undistorted_image)
 
-    with open(bbox_path_prefix + str(image_no) + ".txt", 'r', encoding='UTF8') as bbox_txt:
+    finish_image_undistortion_time = time.time()
+
+    with open(raw_bbox_path_prefix + str(image_no) + ".txt", 'r', encoding='UTF8') as bbox_txt:
         bbox_data = bbox_txt.read().split()
         
     bbox_center_x = float(bbox_data[1]) * res_width
@@ -62,23 +69,21 @@ for image_no in range(total_images):
     new_max_x = int(new_max[0][0])
     new_max_y = int(new_max[0][1])
 
-    min_x = int(min_x)
-    min_y = int(min_y)
-    max_x = int(max_x)
-    max_y = int(max_y)
+    new_centre_x = (new_min_x + new_max_x) / 2
+    new_centre_y = (new_min_y + new_max_y) / 2
+    new_width = new_max_x - new_min_x
+    new_height = new_max_y - new_min_y
+
+    bbox_str = "0 " + str(new_centre_x) + " " + str(new_centre_y) + " " + str(new_width) + " " + str(new_height)
+
+    with open(corrected_bbox_path_prefix + str(image_no) + ".txt", 'w', encoding='UTF8') as bbox_txt:
+        bbox_txt.write(bbox_str)
 
     end_time = time.time()
-    correction_times = np.append(correction_times, [end_time - start_time])
 
-    #cv.rectangle(image, (min_x, min_y), (max_x, max_y), (0, 255, 0), 1)
-    cv.rectangle(undistorted_image, (min_x, min_y), (max_x, max_y), (0, 0, 255), 1)
-    cv.rectangle(undistorted_image, (new_min_x, new_min_y), (new_max_x, new_max_y), (0, 255, 0), 1)
+    image_undistortion_times = np.append(image_undistortion_times, [finish_image_undistortion_time - start_time])
+    bbox_undistortion_times = np.append(bbox_undistortion_times, [end_time - finish_image_undistortion_time])
 
-    #cv.imwrite(corrected_image_path_prefix + str(image_no) + ".png", undistorted_image)
-
-    #cv.imshow("Raw", image)
-    cv.imshow("Corrected", undistorted_image)
-
-np.savez(data_path_prefix + "Correction Times.npz", correction_times = correction_times)
+np.savez(data_path_prefix + "Correction Times.npz", image_undistortion_times=image_undistortion_times, bbox_undistortion_times=bbox_undistortion_times)
 
 cv.waitKey(0)

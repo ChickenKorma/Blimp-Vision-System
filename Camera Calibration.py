@@ -14,7 +14,7 @@ image_path_prefix = data_path_prefix + "Chequerboard Images/image_"
 chequerboard_length = 7
 chequerboard_width = 7
 
-total_images = 20
+total_images = 30
 
 res_width = 1920
 res_height = 1080
