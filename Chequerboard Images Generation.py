@@ -15,7 +15,7 @@ image_path_prefix = "D:/Uni Stuff/IP/Data/Chequerboard Images/image_"
 total_images = 30
 
 min_distance = 1.8
-max_distance = 3.75
+max_distance = 2
 
 angle_of_view = 40
 
