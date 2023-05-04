@@ -56,13 +56,13 @@ rot_z = pose_data["rot_z"].to_numpy()
 plt.rcParams["figure.autolayout"] = True
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.scatter(rot_x, rot_y, rot_z, alpha=0.1, marker=".")
+ax.scatter(rot_x, rot_y, rot_z, alpha=0.2, marker=".")
 
 ax.set_xlim(-0.18, 0.18)
 ax.set_ylim(-0.79, 0.79)
 ax.set_zlim(-3.15, 3.15)
 
 ax.set_xlabel("X ($rad$)")
-ax.set_ylabel("X ($rad$)")
+ax.set_ylabel("Y ($rad$)")
 ax.set_zlabel("Z ($rad$)")
 plt.show()
